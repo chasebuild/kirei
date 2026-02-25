@@ -1,0 +1,17 @@
+[package]
+name = "cli-template"
+version = "0.1.0"
+edition = "2024"
+description = "A clean Rust CLI template (clap + cliclack)"
+license = "MIT"
+repository = "https://github.com/your-org/your-repo"
+homepage = "https://github.com/your-org/your-repo"
+documentation = "https://github.com/your-org/your-repo#readme"
+readme = "../README.md"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+cliclack = { workspace = true }
+cli-template-core = { path = "../core", version = "0.1.0" }
+serde_json = { workspace = true }

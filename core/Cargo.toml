@@ -1,0 +1,14 @@
+[package]
+name = "cli-template-core"
+version = "0.1.0"
+edition = "2024"
+description = "Core library for a Rust CLI template"
+license = "MIT"
+repository = "https://github.com/your-org/your-repo"
+
+[dependencies]
+anyhow = { workspace = true }
+directories = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
