@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
 pub enum CoreError {
-    #[error("Could not determine a config directory for this platform")]
-    NoConfigDir,
+    #[error("Could not determine the user home directory")]
+    NoHomeDir,
 
     #[error("Failed to create config directory: {path}")]
     CreateConfigDir {
