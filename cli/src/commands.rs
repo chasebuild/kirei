@@ -284,3 +284,179 @@ fn build_client(
         ProviderId::Jira => Ok(Box::new(JiraClient::new())),
     }
 }
+
+async fn project_command(args: ProjectArgs, store: &ConfigStore) -> Result<()> {
+    intro_message("project management")?;
+    let config = store.load_or_default()?;
+
+    let provider = args.provider.map(Into::into).unwrap_or(config.unified.default_provider);
+    let token = resolve_token(provider, &config)?;
+    let client = build_client(provider, token, &config)?;
+
+    match args.command {
+        ProjectSubcommand::Create => {
+            create_project(args, &config)?;
+        }
+        ProjectSubcommand::List => {
+            list_projects(args, &config)?;
+        }
+        ProjectSubcommand::Update => {
+            update_project(args, &config)?;
+        }
+    }
+
+    outro_message("Done with project management.")?;
+    Ok(())
+}
+
+async fn task_command(args: TaskArgs, store: &ConfigStore) -> Result<()> {
+    intro_message("task management")?;
+    let config = store.load_or_default()?;
+
+    let provider = args.provider.map(Into::into).unwrap_or(config.unified.default_provider);
+    let token = resolve_token(provider, &config)?;
+    let client = build_client(provider, token, &config)?;
+
+    match args.command {
+        TaskSubcommand::Create => {
+            create_task(args, &config)?;
+        }
+        TaskSubcommand::List => {
+            list_tasks(args, &config)?;
+        }
+        TaskSubcommand::Move => {
+            move_task(args, &config)?;
+        }
+        TaskSubcommand::Update => {
+            update_task(args, &config)?;
+        }
+    }
+
+    outro_message("Done with task management.")?;
+    Ok(())
+}
+
+fn create_project(args: ProjectArgs, config: &Config) -> Result<()> {
+    let project = cli_template_core::unified::UnifiedProject {
+        key: args.key.clone().unwrap_or_else(|| args.name.clone().unwrap_or_default()),
+        name: args.name.clone().unwrap_or_default(),
+        description: args.description.clone().unwrap_or_default(),
+        workspace: args.workspace.clone().unwrap_or_else(|| config.unified.default_workspace.clone()),
+        repo: args.repo.clone().unwrap_or_else(|| config.unified.default_repo.clone()),
+    };
+
+    println!("Creating project: {}\n{}", project.name, project.description);
+    println!("Provider: {:?}", args.provider);
+    println!("Workspace: {:?}", project.workspace);
+    println!("Repo: {:?}", project.repo);
+    println!("Key: {:?}", project.key);
+    
+    Ok(())
+}
+
+fn list_projects(args: ProjectArgs, config: &Config) -> Result<()> {
+    println!("Listing projects...");
+    println!("Provider: {:?}", args.provider);
+    println!("Workspace: {:?}", args.workspace);
+    println!("Repo: {:?}", args.repo);
+    
+    Ok(())
+}
+
+fn update_project(args: ProjectArgs, config: &Config) -> Result<()> {
+    if args.key.is_none() {
+        return Err(anyhow::anyhow!("Project key is required for update operation."));
+    }
+
+    let project = cli_template_core::unified::UnifiedProject {
+        key: args.key.clone().unwrap_or_default(),
+        name: args.name.clone().unwrap_or_default(),
+        description: args.description.clone().unwrap_or_default(),
+        workspace: args.workspace.clone().unwrap_or_else(|| config.unified.default_workspace.clone()),
+        repo: args.repo.clone().unwrap_or_else(|| config.unified.default_repo.clone()),
+    };
+
+    println!("Updating project: {}", project.key);
+    println!("New name: {}", project.name);
+    println!("New description: {}", project.description);
+    println!("Provider: {:?}", args.provider);
+    println!("Workspace: {:?}", project.workspace);
+    println!("Repo: {:?}", project.repo);
+    
+    Ok(())
+}
+
+fn create_task(args: TaskArgs, config: &Config) -> Result<()> {
+    let task = cli_template_core::unified::UnifiedTask {
+        id: args.task_id.clone().unwrap_or_default(),
+        title: args.title.clone().unwrap_or_default(),
+        description: args.description.clone().unwrap_or_default(),
+        status: args.status.clone().unwrap_or_default(),
+        project: args.project.clone().unwrap_or_default(),
+        workspace: args.workspace.clone().unwrap_or_else(|| config.unified.default_workspace.clone()),
+        repo: args.repo.clone().unwrap_or_else(|| config.unified.default_repo.clone()),
+    };
+
+    println!("Creating task: {}", task.title);
+    println!("Description: {}", task.description);
+    println!("Status: {}", task.status);
+    println!("Project: {}", task.project);
+    println!("Provider: {:?}", args.provider);
+    println!("Workspace: {:?}", task.workspace);
+    println!("Repo: {:?}", task.repo);
+    
+    Ok(())
+}
+
+fn list_tasks(args: TaskArgs, config: &Config) -> Result<()> {
+    println!("Listing tasks...");
+    println!("Provider: {:?}", args.provider);
+    println!("Workspace: {:?}", args.workspace);
+    println!("Repo: {:?}", args.repo);
+    println!("Project: {:?}", args.project);
+    
+    Ok(())
+}
+
+fn move_task(args: TaskArgs, config: &Config) -> Result<()> {
+    if args.task_id.is_none() {
+        return Err(anyhow::anyhow!("Task ID is required for move operation."));
+    }
+    if args.project.is_none() {
+        return Err(anyhow::anyhow!("Target project is required for move operation."));
+    }
+
+    println!("Moving task: {}", args.task_id.clone().unwrap_or_default());
+    println!("To project: {}", args.project.clone().unwrap_or_default());
+    println!("Provider: {:?}", args.provider);
+    println!("Workspace: {:?}", args.workspace);
+    println!("Repo: {:?}", args.repo);
+    
+    Ok(())
+}
+
+fn update_task(args: TaskArgs, config: &Config) -> Result<()> {
+    if args.task_id.is_none() {
+        return Err(anyhow::anyhow!("Task ID is required for update operation."));
+    }
+
+    let task = cli_template_core::unified::UnifiedTask {
+        id: args.task_id.clone().unwrap_or_default(),
+        title: args.title.clone().unwrap_or_default(),
+        description: args.description.clone().unwrap_or_default(),
+        status: args.status.clone().unwrap_or_default(),
+        project: args.project.clone().unwrap_or_default(),
+        workspace: args.workspace.clone().unwrap_or_else(|| config.unified.default_workspace.clone()),
+        repo: args.repo.clone().unwrap_or_else(|| config.unified.default_repo.clone()),
+    };
+
+    println!("Updating task: {}", task.id);
+    println!("New title: {}", task.title);
+    println!("New description: {}", task.description);
+    println!("New status: {}", task.status);
+    println!("Provider: {:?}", args.provider);
+    println!("Workspace: {:?}", task.workspace);
+    println!("Repo: {:?}", task.repo);
+    
+    Ok(())
+}
