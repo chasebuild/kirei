@@ -1,46 +1,47 @@
-use crate::error::CoreError;
-use crate::unified::ProviderId;
-use directories::BaseDirs;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 const CONFIG_DIR_NAME: &str = ".kirei";
 const CONFIG_FILE_NAME: &str = "config.json";
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UnifiedConfig {
-    pub default_provider: ProviderId,
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct GitHubConfig {
     pub default_repo: Option<String>,
+    pub client_id: Option<String>,
+    pub client_secret: Option<String>,
+    pub token: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct LinearConfig {
     pub default_workspace: Option<String>,
-    pub tokens: HashMap<ProviderId, String>,
+    pub token: Option<String>,
 }
 
-impl Default for UnifiedConfig {
-    fn default() -> Self {
-        Self {
-            default_provider: ProviderId::Github,
-            default_repo: None,
-            default_workspace: None,
-            tokens: HashMap::new(),
-        }
-    }
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct TrelloConfig {
+    pub default_board: Option<String>,
+    pub api_key: Option<String>,
+    pub token: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct JiraConfig {
+    pub server_url: Option<String>,
+    pub default_project: Option<String>,
+    pub email: Option<String>,
+    pub token: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Config {
-    pub user_name: String,
-    pub unified: UnifiedConfig,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            user_name: "World".to_string(),
-            unified: UnifiedConfig::default(),
-        }
-    }
+    #[serde(default)]
+    pub default_provider: String,
+    pub github: GitHubConfig,
+    pub linear: LinearConfig,
+    pub trello: TrelloConfig,
+    pub jira: JiraConfig,
 }
 
 pub struct ConfigStore {
@@ -49,8 +50,9 @@ pub struct ConfigStore {
 }
 
 impl ConfigStore {
-    pub fn new() -> Result<Self, CoreError> {
-        let base_dirs = directories::BaseDirs::new().ok_or(CoreError::NoHomeDir)?;
+    pub fn new() -> Result<Self, anyhow::Error> {
+        let base_dirs = directories::BaseDirs::new()
+            .ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?;
         let home = base_dirs.home_dir();
         let dir = home.join(CONFIG_DIR_NAME);
         let path = dir.join(CONFIG_FILE_NAME);
@@ -65,33 +67,26 @@ impl ConfigStore {
         &self.path
     }
 
-    pub fn load_or_default(&self) -> Result<Config, CoreError> {
+    pub fn load_or_default(&self) -> Result<Config, anyhow::Error> {
         if !self.path.exists() {
             return Ok(Config::default());
         }
 
-        let bytes = fs::read(&self.path).map_err(|source| CoreError::ReadConfig {
-            path: self.path.clone(),
-            source,
-        })?;
-        serde_json::from_slice(&bytes).map_err(|source| CoreError::ParseConfig {
-            path: self.path.clone(),
-            source,
-        })
+        let bytes = fs::read(&self.path)?;
+        match serde_json::from_slice::<Config>(&bytes) {
+            Ok(config) => Ok(config),
+            Err(_) => {
+                // Config file exists but has old/invalid format, return default
+                Ok(Config::default())
+            }
+        }
     }
 
-    pub fn save(&self, config: &Config) -> Result<PathBuf, CoreError> {
-        fs::create_dir_all(&self.dir).map_err(|source| CoreError::CreateConfigDir {
-            path: self.dir.clone(),
-            source,
-        })?;
+    pub fn save(&self, config: &Config) -> Result<PathBuf, anyhow::Error> {
+        fs::create_dir_all(&self.dir)?;
 
-        let json = serde_json::to_vec_pretty(config)
-            .map_err(|source| CoreError::SerializeConfig { source })?;
-        fs::write(&self.path, json).map_err(|source| CoreError::WriteConfig {
-            path: self.path.clone(),
-            source,
-        })?;
+        let json = serde_json::to_vec_pretty(config)?;
+        fs::write(&self.path, json)?;
         Ok(self.path.clone())
     }
 }

@@ -1,9 +1,11 @@
 use anyhow::Result;
 use clap::Parser;
+use tokio::main;
 
 use cli_template::{args::Cli, commands};
 
-fn main() -> Result<()> {
+#[main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
-    commands::run(cli)
+    commands::run(cli).await
 }

@@ -1,20 +1,24 @@
 [package]
-name = "cli-template-core"
+name = "kirei-provider-github"
 version = "0.1.0"
-edition = "2024"
-description = "Core library for a Rust CLI template"
+edition = "2021"
+description = "GitHub provider for Kirei"
 license = "MIT"
-repository = "https://github.com/your-org/your-repo"
+
+[lib]
+path = "src/lib.rs"
 
 [dependencies]
 anyhow = { workspace = true }
-directories = { workspace = true }
+async-trait = { workspace = true }
+reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-async-trait = { workspace = true }
-reqwest = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
 rand = { workspace = true }
 tiny_http = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

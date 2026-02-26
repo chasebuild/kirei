@@ -1,4 +1,5 @@
 pub mod github;
+pub mod github_oauth;
 pub mod jira;
 pub mod linear;
 pub mod trello;

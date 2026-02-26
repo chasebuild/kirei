@@ -1,6 +1,4 @@
 pub mod config;
 pub mod error;
-pub mod unified;
 
-pub use config::{Config, ConfigStore};
-pub use unified::{ProviderClient, ProviderId, UnifiedError, UnifiedIssue};
+pub use config::{Config, ConfigStore, GitHubConfig, JiraConfig, LinearConfig, TrelloConfig};
