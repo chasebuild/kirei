@@ -60,7 +60,7 @@ impl std::str::FromStr for ProviderId {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnifiedIssue {
     pub id: String,
     pub title: String,
@@ -70,19 +70,74 @@ pub struct UnifiedIssue {
     pub raw_payload: Value,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UnifiedProject {
+    pub id: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub provider: ProviderId,
+    pub raw: Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UnifiedTask {
+    pub id: String,
+    pub title: String,
+    pub description: Option<String>,
+    pub status: String,
+    pub project_id: String,
+    pub provider: ProviderId,
+    pub raw: Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnifiedListQuery {
     pub workspace: Option<String>,
     pub repo: Option<String>,
     pub search: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnifiedCreateParams {
     pub workspace: Option<String>,
     pub repo: Option<String>,
     pub title: String,
     pub body: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UnifiedProjectQuery {
+    pub workspace: Option<String>,
+    pub repo: Option<String>,
+    pub search: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UnifiedCreateProjectParams {
+    pub workspace: Option<String>,
+    pub repo: Option<String>,
+    pub name: String,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UnifiedTaskQuery {
+    pub project_id: Option<String>,
+    pub status: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UnifiedCreateTaskParams {
+    pub project_id: String,
+    pub title: String,
+    pub description: Option<String>,
+    pub status: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UnifiedMoveTaskParams {
+    pub task_id: String,
+    pub target_status: String,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -106,6 +161,30 @@ pub trait ProviderClient: Send + Sync {
     async fn list(&self, query: UnifiedListQuery) -> Result<Vec<UnifiedIssue>, UnifiedError>;
 
     async fn create(&self, params: UnifiedCreateParams) -> Result<UnifiedIssue, UnifiedError>;
+
+    // Project management
+    async fn list_projects(
+        &self,
+        query: UnifiedProjectQuery,
+    ) -> Result<Vec<UnifiedProject>, UnifiedError>;
+
+    async fn create_project(
+        &self,
+        params: UnifiedCreateProjectParams,
+    ) -> Result<UnifiedProject, UnifiedError>;
+
+    // Task management
+    async fn list_tasks(&self, query: UnifiedTaskQuery) -> Result<Vec<UnifiedTask>, UnifiedError>;
+
+    async fn create_task(
+        &self,
+        params: UnifiedCreateTaskParams,
+    ) -> Result<UnifiedTask, UnifiedError>;
+
+    async fn move_task(
+        &self,
+        params: UnifiedMoveTaskParams,
+    ) -> Result<UnifiedTask, UnifiedError>;
 }
 
 impl UnifiedIssue {
